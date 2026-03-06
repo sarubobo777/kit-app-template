@@ -38,6 +38,7 @@ template_name = "omni.usd_composer"
 "omni.graph.telemetry" = {}
 "omni.hsscclient" = {}
 "omni.hydra.engine.stats" = {}
+"omni.hydra.usdrt_delegate" = {}  # Necessary since FabricSceneDelegate is True
 "omni.kit.actions.window" = {}
 "omni.kit.asset_converter" = {}
 "omni.kit.browser.configurator_samples" = {}
@@ -49,7 +50,6 @@ template_name = "omni.usd_composer"
 "omni.kit.collaboration.telemetry" = {}
 "omni.kit.collaboration.viewport.camera" = {}
 "omni.kit.context_menu" = {}
-"omni.kit.converter.cad" = {order = 1000} # allow other deps like asset_importer to load first
 "omni.kit.developer.bundle" = {}
 "omni.kit.graph.delegate.default" = {}
 "omni.kit.hotkeys.window" = {}
@@ -106,6 +106,7 @@ template_name = "omni.usd_composer"
 "omni.kit.widget.layers" = {}
 "omni.kit.widget.live" = {}
 "omni.kit.viewport.scene_camera_model" = {}
+"omni.kit.widget.cache_indicator" = {}
 "omni.kit.widget.timeline" = {}
 "omni.kit.widget.versioning" = {}
 "omni.kit.widgets.custom" = {}
@@ -146,16 +147,17 @@ template_name = "omni.usd_composer"
 "{{ setup_extension_name }}" = { order = 1000 } # we are running that at the end
 
 
-# Windows only extensions
 [dependencies."filter:platform"."windows-x86_64"]
-"omni.kit.window.modifier.titlebar" = {}
+"omni.kit.window.modifier.titlebar" = {version = "=107.0.1"}  # Use exact version to avoid supported target platform check
+"omni.kit.converter.cad" = {order = 1000} # allow other deps like asset_importer to load first
 
+[dependencies."filter:platform"."linux-x86_64"]
+"omni.kit.converter.cad" = {order = 1000} # allow other deps like asset_importer to load first
 
 [settings.app]
 content.emptyStageOnStart = false
 fastShutdown = true
 name = "{{ application_display_name }}"
-useFabricSceneDelegate = true  # Turn on the Fabric scene delegate by default
 show_developer_preference_section = false
 
 
@@ -176,8 +178,8 @@ excluded = [
 	"omni.kit.window.modifier.titlebar",
 ]
 
-[settings.app.exts]
-folders.'++' = [
+[settings.app.exts.folders]
+'++' = [
     "${app}/../exts",
     "${app}/../extscache"
 ]
@@ -208,7 +210,7 @@ mergeMaterials = false
 
 [settings.app.window]
 title = "{{ application_display_name }}"
-iconPath = "${% raw %}{{% endraw %}{{ setup_extension_name }}{% raw %}}{% endraw %}/data/nvidia-omniverse-create.png"
+iconPath = "${% raw %}{{% endraw %}{{ setup_extension_name }}{% raw %}}{% endraw %}/data/nvidia-omniverse-usd_composer.png"
 saveSizeOnExit = false
 width = 1920
 height = 1080
@@ -216,12 +218,14 @@ x = -1
 y = -1
 
 [settings.app.viewport]
+autoFrame.mode = "first_open"  # Auto frame the first time the viewport is opened
 defaults.fillViewport = true
 
 [settings.crashreporter.data]
 experience = "{{ application_display_name }}"
 
 [settings.exts]
+"omni.activity.ui".auto_save_location = ""
 "omni.kit.menu.utils".logDeprecated = false
 "omni.kit.mesh.raycast".bvhBuildOnFirstRequired = true
 "omni.kit.renderer.core".imgui.enableMips = true
@@ -235,7 +239,6 @@ experience = "{{ application_display_name }}"
 "omni.kit.window.file".useNewFilePicker = true
 "omni.kit.window.material".load_after_startup = true
 "omni.light_rigs".setup_extension_name = "{{ setup_extension_name }}"
-"omni.services.transport.server.http".port = 8111
 "omni.ui".raster.default_rasterpolicy_enabled = true
 "omni.usd".enableUsdMaterialWatcherForFsd = true
 "omni.warp".enable_menu = false
@@ -270,7 +273,7 @@ colors.client = 0x0F0F0F
 defaultFont.name = "Arial"
 defaultFont.size = 16
 defaultFont.color = 0xD0D0D0
-icon.file = "${omni.create.app.resources}/data/nvidia-omniverse-create.ico"
+icon.file = "${% raw %}{{% endraw %}{{ setup_extension_name }}{% raw %}}{% endraw %}/data/nvidia-omniverse-usd_composer.ico"
 icon.size = 256
 respondOnMouseUp = true
 separator.color = 0x00B976
@@ -285,12 +288,16 @@ ui_show_list = [
 	"OmniEmissive",
 	"OmniGlass",
 	"OmniPBR",
-	"OmniPBRBase",
 	"OmniPBR ClearCoat",
 	"USD Preview Surface",
 	"USD Preview Surface Texture",
 	"Add MDL File",
 	"Create MDL Graph",
+	"OmniSurface",
+	"OmniSurfacePresets",
+	"OpenPBR Surface",
+	"Standard Surface",
+	"Add MaterialX Reference",
 ]
 
 [settings.exts."omni.kit.viewport.menubar.framerate"]
@@ -330,20 +337,18 @@ mdltranslator.distillMaterial = true  # Render Preferences - Material Distilling
 
 [settings.rtx]
 ecoMode.enabled = true
-hydra.readTransformsFromFabricInRenderDelegate = true
+hydra.readTransformsFromFabricInRenderDelegate = false
 
 
 [settings]
 communityTabEnabled = true
+crashreporter.compressDumpFiles = true
 foundation.verifyOsVersion.enabled = false
 plugins.'carb.profiler-cpu.plugin'.filePath = "${shared_documents}/create_profile.ct.json.gz"
-privacy.externalBuild = true
 renderer.active = "rtx" # RTX As the default renderer always
 renderer.enabled = "rtx"  # iray, pxr
 structuredLog.enable = true
-
-
-[settings.telemetry]
-# Anonymous Kit application usage telemetry
-enableAnonymousAppName = true
-enableAnonymousData = true
+telemetry.disableInternalSessionCheck = true
+telemetry.enableAnonymousAppName = true
+telemetry.enableAnonymousData = true
+privacy.externalBuild = true

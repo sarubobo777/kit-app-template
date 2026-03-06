@@ -14,7 +14,9 @@ from typing import Dict, List
 import carb.events
 import carb.tokens
 import omni.kit.app
+from carb.eventdispatcher import get_eventdispatcher, Event
 from omni.kit.test import AsyncTestCase
+
 
 
 async def wait_stage_loading(wait_frames: int = 2, usd_context=None, timeout=1000, timeout_error=True):
@@ -53,11 +55,10 @@ async def wait_stage_loading(wait_frames: int = 2, usd_context=None, timeout=100
         continue
 
 
-
 class MessagingTest(AsyncTestCase):
     async def setUp(self):
         self._app = omni.kit.app.get_app()
-        self._message_bus = self._app.get_message_bus_event_stream()
+        self._ed = get_eventdispatcher()
 
         # Capture extension root path
         extension = "{{ extension_name }}"
@@ -68,47 +69,40 @@ class MessagingTest(AsyncTestCase):
         """
         Simulate incoming events of the stage loading messaging system
         """
-        import omni.kit.livestream.messaging as messaging
 
-        def on_message_event(event: carb.events.IEvent) -> None:
-            if event.type == carb.events.type_from_string("updateProgressAmount"):
-                    outgoing["updateProgressAmount"] = True
-            elif event.type == carb.events.type_from_string("updateProgressActivity"):
-                    outgoing["updateProgressActivity"] = True
-
-
-        # Register the open stage request type
-        messaging.register_event_type_to_send("openStageRequest")
+        def on_message_event(event: Event) -> None:
+            if event.event_name == "updateProgressAmount":
+                outgoing["updateProgressAmount"] = True
+            elif event.event_name == "updateProgressActivity":
+                outgoing["updateProgressActivity"] = True
 
         outgoing: Dict[str, bool] = {
-            "updateProgressAmount": False,  # Status bar event denoting progress
-            "updateProgressActivity": False  # Status bar event denoting current activity
+            "updateProgressAmount": False,   # Status bar event denoting progress
+            "updateProgressActivity": False, # Status bar event denoting current activity
         }
 
         subscriptions: List[int] = []
         for event in outgoing.keys():
             subscriptions.append(
-                self._message_bus.create_subscription_to_pop(
-                    on_message_event,
-                    name=event
+                self._ed.observe_event(
+                    observer_name=f"MessagingTest:{event}",
+                    event_name=event,
+                    on_event=on_message_event,
                 )
             )
             await self._app.next_update_async()
 
         # Send the openStageRequest event
-        event_type = carb.events.type_from_string("openStageRequest")
         url = self._data_path / "testing.usd"
-        self._message_bus.dispatch(event_type, payload={"url": url.as_posix()})
+        self._ed.dispatch_event("openStageRequest", payload={"url": url.as_posix()})
 
         await wait_stage_loading(wait_frames=300)
         self.assertTrue(all(outgoing.values()))
-
 
     async def test_stage_management_incoming(self):
         """
         Simulate incoming events of the stage management messaging system
         """
-        import omni.kit.livestream.messaging as messaging
 
         subscriptions: List[int] = []
 
@@ -119,63 +113,52 @@ class MessagingTest(AsyncTestCase):
             "resetStageResponse": False,        # response to the request to reset camera attributes
         }
 
-        def on_message_event(event: carb.events.IEvent) -> None:
-            if event.type == carb.events.type_from_string("stageSelectionChanged"):
+        def on_message_event(event: Event) -> None:
+            if event.event_name == "stageSelectionChanged":
                 outgoing["stageSelectionChanged"] = True
-            elif event.type == carb.events.type_from_string("getChildrenResponse"):
+            elif event.event_name == "getChildrenResponse":
                 outgoing["getChildrenResponse"] = True
-            elif event.type == carb.events.type_from_string("makePrimsPickableResponse"):
+            elif event.event_name == "makePrimsPickableResponse":
                 outgoing["makePrimsPickableResponse"] = True
-            elif event.type == carb.events.type_from_string("resetStageResponse"):
+            elif event.event_name == "resetStageResponse":
                 outgoing["resetStageResponse"] = True
-
-        incoming: List[str] = [
-            'getChildrenRequest',
-            'selectPrimsRequest',
-            'makePrimsPickable',
-            'resetStage'
-        ]
 
         # Register outgoing event
         # Subscribe to messaging events
         # Send event to validate
         for event in outgoing.keys():
-            subscriptions.append(self._message_bus.create_subscription_to_pop(
-                on_message_event,
-                name=event
-            ))
+            subscriptions.append(
+                self._ed.observe_event(
+                    observer_name=f"MessagingTest:{event}",
+                    event_name=event,
+                    on_event=on_message_event,
+                )
+            )
 
-            event_type = carb.events.type_from_string(event)
-            self._message_bus.dispatch(event_type, payload={})
-
+            self._ed.dispatch_event(event, payload={})
             await self._app.next_update_async()
 
         # Send the openStageRequest event
-        event_type = carb.events.type_from_string("openStageRequest")
         url = self._data_path / "testing.usd"
-        self._message_bus.dispatch(event_type, payload={"url": url.as_posix()})
+        self._ed.dispatch_event("openStageRequest", payload={"url": url.as_posix()})
 
         # Wait for the stage to load
         await wait_stage_loading(wait_frames=30)
 
         # Get children of root
-        event_type = carb.events.type_from_string("getChildrenRequest")
-        self._message_bus.dispatch(event_type, payload={"prim_path": "/World"})
+        self._ed.dispatch_event("getChildrenRequest", payload={"prim_path": "/World", "filters": []})
         await self._app.next_update_async()
 
         # Select Prims Request
-        event_type = carb.events.type_from_string("selectPrimsRequest")
-        self._message_bus.dispatch(event_type, payload={"paths": ["/World/Cube"]})
+        self._ed.dispatch_event("selectPrimsRequest", payload={"paths": ["/World/Cube"]})
         await self._app.next_update_async()
 
         # Make Prims Pickable Request
-        event_type = carb.events.type_from_string("makePrimsPickable")
-        self._message_bus.dispatch(event_type, payload={"paths": ["/World/Cube", "/World/Sphere"]})
+        self._ed.dispatch_event("makePrimsPickable", payload={"paths": ["/World/Cube", "/World/Sphere"]})
         await self._app.next_update_async()
 
         # Reset Stage Request
-        event_type = carb.events.type_from_string("resetStage")
-        self._message_bus.dispatch(event_type)
+        self._ed.dispatch_event("resetStage", payload={})
         await self._app.next_update_async()
 
         self.assertTrue(all(outgoing.values()))

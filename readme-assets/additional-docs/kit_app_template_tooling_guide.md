@@ -94,6 +94,36 @@ Next, select (using Space) the Template Layer(s) to add. Enter to confirm.
 
 After the operation completes, rebuild (`./repo.sh build` or `.\repo.bat build`) the project to pull in the new extensions.
 
+### What `template new` Modifies
+
+When creating applications, the template tool automatically updates build configuration files:
+
+1. **`premake5.lua`** - Adds `define_app("appname.kit")` so the build system discovers your application
+2. **`repo.toml`** - Adds the app path to `repo_precache_exts.apps` so dependent extensions are pre-cached at build time
+3. **`source/rendered_template_metadata.json`** - Records which templates were rendered (enables `template modify` and `template list`)
+4. **Setup extension** (some templates) - Creates an extension in `source/extensions/` for application-specific initialization
+
+**Extensions** are automatically discovered by the Kit build system based on directory structure, so no build file modifications are needed.
+
+### Creating Applications Without Templates
+
+If you create a `.kit` file manually (without using `repo template new`), you must update the build files yourself:
+
+1. **Add to `premake5.lua`:**
+   ```lua
+   define_app("my_company.my_app.kit")
+   ```
+
+2. **Add to `repo.toml`:**
+   ```toml
+   [repo_precache_exts]
+   apps = ["${root}/source/apps/my_company.my_app.kit"]
+   ```
+
+   If apps already exist, append to the existing list.
+
+> **Note:** Manually created applications won't be tracked in `rendered_template_metadata.json`, so `template modify` cannot add layers to them.
+
 ## Build Tool
 
 **Command:** `./repo.sh build` or `.\repo.bat build`
@@ -173,6 +203,11 @@ You can pass through arguments to your targeted Kit executable by appending `--`
     .\repo.bat launch -- --clear-cache
     ```
 
+:warning: **Important Notes When Launching Applications:**
+- **Launching an application with path specific arguments:** When launching application with path specific args (for example `--/app/auto_load_usd` using the USD Viewer Template), the path provided should either be absolute (full path from root) or if the asset is within an extension use a tokenized path (e.g. `./repo.sh launch -- --/app/auto_load_usd='${omni.usd_viewer.samples}/samples_data/stage01.usd'` )
+
+- **Launching directly from an uncompressed package:** The `launch` utility is accessible from the project repository and can be used to launch packages from the project repository.  **However**, if launching an application from within a uncompressed packaged the `launch` utility is not available and any arguments passed should be passed to the `.bat` or `.sh` script directly (e.g. `my.app.kit.sh --/app/auto_load_usd=path/to/asset.usd`).
+
 ## Test Tool
 
 **Command:** `./repo.sh test` or `.\repo.bat test`
@@ -234,19 +269,82 @@ Additional launch options:
     ```powershell
     .\repo.bat package --thin
     ```
+:warning: **Important Note for Packaging:** Because the packaging operation will package everything within the `source/` directory the package version will need to be set independently of a given `kit` file.  **The version is set within the `tools/VERSION.md` file.**
 
-- **`--container`:** Packages the application as a container image (Linux only). When using the `--container` flag, the user will be asked to select a `.kit` file to use within the entry point script for the container.  This can also be specified without user interaction by passing it appropriate `.kit` file name via the `--target-app` flag.
+## Containerization Tool
+
+**Command:** `./repo.sh package_container` or `.\repo.bat package_container`
+
+### Purpose
+The containerization tool provided by `repo_kit_tools` supports containerization of applications. This is especially useful for deploying headless services and streaming applications in a containerized environment.
+
+### How It Works
+
+The tool performs these steps:
+1. **Creates a fat package** - Stages all dependencies into a temp directory
+2. **Trims unused extensions** - Removes disabled extensions to minimize image size
+3. **Splits into Docker layers** - Base layer (kit kernel + extscache) and app layer for faster rebuilds
+4. **Builds the container** - Uses a configurable base image (default: `nvcr.io/nvidia/omniverse/ov-base-ubuntu-22`)
+
+The container entrypoint supports runtime configuration via environment variables (`NVDA_KIT_ARGS`, `NVDA_KIT_NUCLEUS`).
+
+### Usage
+Always run a build before packaging to ensure the application is up-to-date:
+
+- **`package_container`:** Packages the application as a container image (Linux only). When using the `package_container`, the user will be asked to select a `.kit` file to use within the entry point script for the container.  This can also be specified without user interaction by passing it appropriate `.kit` file name via the `--app ${path_to_kit_file}` flag.
 
     **Linux:**
     ```bash
-    ./repo.sh package --container
+    ./repo.sh package_container
     ```
     **Windows:**
     ```powershell
-    .\repo.bat package --container
+    .\repo.bat package_container
     ```
 
-:warning: **Important Note for Packaging:** Because the packaging operation will package everything within the `source/` directory the package version will need to be set independently of a given `kit` file.  **The version is set within the `tools/VERSION.md` file.**
+Additional command options:
+- **`--app`:** Specify the Kit app to containerize. One of defined in the config.
+
+    **Linux:**
+    ```bash
+    ./repo.sh package_container --app ${path_to_kit_file}
+    ```
+    **Windows:**
+    ```powershell
+    .\repo.bat package_container --app ${path_to_kit_file}
+    ```
+
+    - **`--image-tag`:** Optional image tag override to use for docker image. If includes ':', it will be used as is, e.g.: name:tag.
+
+    **Linux:**
+    ```bash
+    ./repo.sh package_container --image-tag [container_image_name:container_image_tag]
+    ```
+    **Windows:**
+    ```powershell
+    .\repo.bat package_container --image-tag [container_image_name:container_image_tag]
+    ```
+
+- **`-p` or `--from-package`:** Use package from 'kit-app-template/_build/packages/kit-app-template*.${config}.*' instead of a root folder.
+
+    **Linux:**
+    ```bash
+    ./repo.sh package_container -p
+    ```
+    **Windows:**
+    ```powershell
+    .\repo.bat package_container -p
+    ```
+- **`-g` or `--generate`:** Generate default container template files into the destination folder. Passed argument is the destination folder.
+
+    **Linux:**
+    ```bash
+    ./repo.sh package_container -g
+    ```
+    **Windows:**
+    ```powershell
+    .\repo.bat package_container -g
+    ```
 
 ## Additional Resources
 - [Kit SDK Companion Tutorial](https://docs.omniverse.nvidia.com/kit/docs/kit-app-template/latest/docs/intro.html)

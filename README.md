@@ -6,7 +6,7 @@
 
 ## :memo: Feature Branch Information
 **This repository is based on a Feature Branch of the Omniverse Kit SDK.** Feature Branches are regularly updated and best suited for testing and prototyping.
-For stable, production-oriented development, please use the [Production Branch of the Kit SDK on NVIDIA GPU Cloud (NGC)](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/omniverse/collections/production_branch_december_2024).
+For stable, production-oriented development, please use the [Production Branch of the Kit SDK on NVIDIA GPU Cloud (NGC)](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/omniverse/collections/omniverse_enterprise_25h1).
 
 [Omniverse Release Information](https://docs.omniverse.nvidia.com/dev-overview/latest/omniverse-releases.html#)
 
@@ -66,7 +66,7 @@ Ensure your system is set up with the following to work with Omniverse Applicati
 
 - **GPU**: NVIDIA RTX capable GPU (RTX 3070 or Better recommended)
 
-- **Driver**: Minimum and recommended - 537.58. Newer versions may work but are not equally validated.
+- **Driver**: Minimum and recommended - This update requires driver version >=550.54.15 (Linux) or >=551.78 (Windows). Please verify your driver versions before upgrading. Newer versions may work but are not equally validated.
 
 - **Internet Access**: Required for downloading the Omniverse Kit SDK, extensions, and tools.
 
@@ -251,11 +251,18 @@ The Omniverse Platform supports streaming Kit-based applications directly to a w
 - **Omniverse Kit App Streaming :** A reference implementation on GPU-enabled Kubernetes clusters for complete control over infrastructure and scalability.
 
 ### NVIDIA-Managed
-- **Omniverse Cloud (OVC):** Offloads hardware, streaming, and network complexities for secure, large scale deployments.
+- **NVIDIA Cloud Functions (NVCF):** Offloads hardware, streaming, and network complexities for secure, large scale deployments.
 
 - **Graphics Delivery Network (GDN):** Streams high-fidelity 3D content worldwide with just a shared URL.
 
 [Configuring and packaging streaming-ready Kit applications](readme-assets/additional-docs/kit_app_streaming_config.md)
+
+### Deploying to NVIDIA DGX Cloud (DGXC)
+
+> ⚠️ **Planning to deploy on DGX Cloud?**
+> Applications deployed on NVIDIA DGX Cloud via NVCF need NVCF-compatible streaming configuration. The **NVCF Streaming** layer provides this out of the box, or you can create your own custom layer. Add layers during `template new` or later with `./repo.sh template modify` (Linux) or `.\repo.bat template modify` (Windows). Standard streaming configurations are not DGXC-compatible.
+
+See the [DGXC Deployment Guide](readme-assets/additional-docs/dgxc_nvcf_deployment.md) for configuration details and the [public DGXC documentation](https://docs.omniverse.nvidia.com/omniverse-dgxc/latest/) for deployment steps.
 
 
 ## Tools
