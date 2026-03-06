@@ -1,0 +1,20 @@
+[package]
+name = "physical_button"
+version = "1.0.0"
+authors = ["Your Name"]
+title = "Physical Button System"
+description = "Physical button system for controlling extensions with visual feedback"
+readme = "docs/README.md"
+repository = ""
+keywords = ["button", "physics", "control"]
+category = "simulation"
+changelog = "docs/CHANGELOG.md"
+
+[dependencies]
+"omni.kit.uiapp" = {}
+"omni.usd" = {}
+"omni.kit.commands" = {}
+"omni.physx" = {}
+
+[[python.module]]
+name = "physical_button"

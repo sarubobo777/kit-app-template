@@ -1,0 +1,31 @@
+[package]
+version = "1.0.0"
+title = "Handle Controller Extension"
+description = "Control object movement through rotating handles with revolute joints"
+authors = ["Your Name"]
+category = "Simulation"
+keywords = ["physics", "joint", "control", "movement"]
+readme = "README.md"
+repository = ""
+changelog = "CHANGELOG.md"
+preview_image = "data/preview.png"
+icon = "data/icon.png"
+
+[dependencies]
+"omni.kit.uiapp" = {}
+"omni.usd" = {}
+"omni.ui" = {}
+"omni.physx" = {}
+"omni.physx.ui" = {}
+"omni.kit.viewport.utility" = {}
+"omni.timeline" = {}
+
+[[python.module]]
+name = "handle_controller"
+
+[settings]
+exts."handle_controller".max_handles = 10
+exts."handle_controller".default_move_amount = 10.0
+exts."handle_controller".default_min_limit = -50.0
+exts."handle_controller".default_max_limit = 50.0
+exts."handle_controller".update_frequency = 60.0

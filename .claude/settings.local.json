@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(touch:*)",
+      "Bash(find:*)",
+      "WebSearch",
+      "Read(//mnt/c/Users/nryou/OneDrive - 大阪工業大学/院ゼミ/**)",
+      "WebFetch(domain:docs.omniverse.nvidia.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(cmd.exe /c:*)",
+      "Bash(./repo.sh:*)",
+      "Bash(cat:*)",
+      "Bash(tree:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Read(//mnt/c/Users/nryou/AppData/Local/**)",
+      "Read(//home/nryou/.local/share/ov/**)",
+      "Read(//mnt/c/Users/nryou/**)",
+      "Bash(python3:*)",
+      "Bash(for dir in /mnt/c/Users/nryou/Documents/Omniverse/zemiProject/kit-app-template/source/extensions/*/config/extension.toml)",
+      "Bash(do)",
+      "Bash(echo:*)",
+      "Bash(if ! grep -q \"^name = \" \"$dir\")",
+      "Bash(then)",
+      "Bash(else)",
+      "Bash(fi:*)",
+      "Bash(done)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

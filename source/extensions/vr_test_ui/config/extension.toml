@@ -1,0 +1,20 @@
+[package]
+name = "vr_test_ui"  # REQUIRED: Extension name for Kit to identify this extension
+title = "VR Test UI"
+version = "0.1.0"
+description = "VR testing extension for UI display and controller input verification"
+category = "VR"
+changelog = "docs/CHANGELOG.md"
+icon = "data/icon.png"
+keywords = ["vr", "xr", "ui", "test"]
+preview_image = "data/preview.png"
+readme = "docs/README.md"
+authors = ["Your Name"]
+repository = ""
+
+[dependencies]
+"omni.ui" = {}
+"omni.kit.xr.core" = {}  # Required for VR functionality
+
+[[python.module]]
+name = "vr_test_ui"
